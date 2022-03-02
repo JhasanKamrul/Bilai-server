@@ -45,12 +45,12 @@ async function run() {
         const database = client.db('biLaiProject');
         const appointmentsCollection = database.collection('appointments');
         const userCollection = database.collection('users');
-        const productsCollection = database.collection('products');
         const ordersCollection = database.collection('orders');
         const blogCollection = database.collection('blogs');
         const paymentCollection = database.collection('payment');
         const allProductsCollection = database.collection('allProducts')
         const doctorCollections = database.collection('doctors');
+        const adoptationCollections = database.collection('adoptation');
         //sslcommerz init
         app.post('/init', async (req, res) => {
             // console.log(req.body);
@@ -132,13 +132,14 @@ async function run() {
             const order = await paymentCollection.deleteOne({ tran_id: req.body.tran_id });
             res.status(200).redirect('http://localhost:3000');
         });
+
         app.get('/purchase', async (req, res) => {
             const cursor = paymentCollection.find({});
             const paymnets = await cursor.toArray();
             res.send(paymnets)
-        })
+        });
         app.get('/products', async (req, res) => {
-            const cursor = productsCollection.find({});
+            const cursor = allProductsCollection.find({});
             const products = await cursor.toArray();
             res.send(products);
         });
@@ -154,10 +155,8 @@ async function run() {
             console.log(req.query.date);
             const date = new Date(req.query.date).toLocaleDateString();
             const query = { email: email, date: date };
-            // console.log(query);
             const cursor = appointmentsCollection.find(query);
             const appointments = await cursor.toArray();
-            // console.log(appointments);
             res.json(appointments);
 
         });
@@ -165,10 +164,13 @@ async function run() {
         app.get('/dashboard/allAppointment', async (req, res) => {
             const curosor = appointmentsCollection.find({});
             const allAppointments = await curosor.toArray();
-            // console.log(allAppointments);
+            res.json(allAppointments);
+        });
+        app.get('/blogs', async (req, res) => {
+            const curosor = blogCollection.find({});
+            const allAppointments = await curosor.toArray();
             res.json(allAppointments);
         })
-
         app.post('/appointments', async (req, res) => {
             const appointment = req.body;
             // console.log(appointment);
@@ -176,6 +178,12 @@ async function run() {
             // console.log(result);
             res.json(result)
         });
+        app.post('/adoptations', async (req, res) => {
+            const adoptaion = req.body;
+            console.log(adoptaion);
+            const result = await adoptationCollections.insertOne(adoptaion);
+            res.json(result);
+        })
         app.post('/allProducts', async (req, res) => {
             // console.log('body', req.body);
             // console.log('files', req.files);
