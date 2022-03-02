@@ -21,6 +21,7 @@ var serviceAccount = require("./bilai-web-firebase-adminsdk.json");
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
 });
+
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.l1zih.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, {
     useNewUrlParser: true,
@@ -47,7 +48,8 @@ async function run() {
         const ordersCollection = database.collection("orders");
         const blogCollection = database.collection("blogs");
         const paymentCollection = database.collection("payment");
-
+        const allProductsCollection = database.collection("allProducts");
+        const doctorCollections = database.collection("doctors");
         //sslcommerz init
         app.post("/init", async (req, res) => {
             // console.log(req.body);
@@ -66,6 +68,7 @@ async function run() {
                 payment_status: "pending",
                 cus_name: req.body.cus_name,
                 cus_email: req.body.cus_email,
+                purchase_date: req.body.date,
                 cus_add1: "Dhaka",
                 cus_add2: "Dhaka",
                 cus_city: "Dhaka",
@@ -141,12 +144,28 @@ async function run() {
             });
             res.status(200).redirect("http://localhost:3000");
         });
+        app.get("/purchase", async (req, res) => {
+            const cursor = paymentCollection.find({});
+            const paymnets = await cursor.toArray();
+            res.send(paymnets);
+        });
+        app.get("/blogs", async (req, res) => {
+            const curosor = blogCollection.find({});
+            const allAppointments = await curosor.toArray();
+            res.json(allAppointments);
+        });
         app.get("/products", async (req, res) => {
             const cursor = productsCollection.find({});
             const products = await cursor.toArray();
             res.send(products);
         });
-
+        app.get("/orders/:email", async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            const result = ordersCollection.find(query);
+            const orders = await result.toArray();
+            res.json(orders);
+        });
         app.get("/appointments", async (req, res) => {
             const email = req.query.email;
             console.log(req.query.date);
@@ -158,7 +177,6 @@ async function run() {
             // console.log(appointments);
             res.json(appointments);
         });
-        // clicked ? id = ${ id }
 
         app.get("/dashboard/allAppointment", async (req, res) => {
             const curosor = appointmentsCollection.find({});
@@ -172,6 +190,30 @@ async function run() {
             // console.log(appointment);
             const result = await appointmentsCollection.insertOne(appointment);
             // console.log(result);
+            res.json(result);
+        });
+        app.post("/allProducts", async (req, res) => {
+            // console.log('body', req.body);
+            // console.log('files', req.files);
+            const product = req.body;
+            const pic = req.files.img;
+            const picData = pic.data;
+            const encodedPic = picData.toString("base64");
+            const productPicBuffer = Buffer.from(encodedPic, "base64");
+            const products = {
+                key: product.key,
+                category: product.category,
+                name: product.name,
+                seller: product.seller,
+                stock: product.stock,
+                star: product.star,
+                description: product.description,
+                price: product.price,
+                shipping: product.shipping,
+                img: productPicBuffer,
+            };
+
+            const result = await allProductsCollection.insertOne(products);
             res.json(result);
         });
         app.post("/blogs", async (req, res) => {
@@ -224,6 +266,7 @@ async function run() {
             // console.log(result);
             res.json(result);
         });
+
         app.delete("/appoitments/:id", async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
@@ -238,12 +281,6 @@ async function run() {
             const allUser = await curosor.toArray();
             res.json(allUser);
         });
-        app.delete("/allUser/:id", async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: ObjectId(id) };
-            const result = await userCollection.deleteOne(query);
-            res.json(result);
-        });
         app.get("/users/:email", async (req, res) => {
             const email = req.params.email;
             const query = { email: email };
@@ -254,6 +291,7 @@ async function run() {
             }
             res.json({ admin: isAdmin });
         });
+
         app.get("/singleuser/:email", async (req, res) => {
             const email = req.params.email;
             const query = { email: email };
@@ -261,6 +299,7 @@ async function run() {
             // const cursor=userCollection.find()
             res.json(result);
         });
+
         app.post("/users", async (req, res) => {
             const user = req.body;
             const result = await userCollection.insertOne(user);
@@ -308,6 +347,35 @@ async function run() {
                     message: "You Do Not Have Access to make Admin",
                 });
             }
+        });
+        app.get("/doctors", async (req, res) => {
+            const curosor = doctorCollections.find({});
+            const allDoctor = await curosor.toArray();
+            res.json(allDoctor);
+        });
+        app.post("/doctors", async (req, res) => {
+            const doctor = req.body;
+            const pic = req.files.imgUrl;
+            const docData = pic.data;
+            const encodedPic = docData.toString("base64");
+            const doctorPicBuffer = Buffer.from(encodedPic, "base64");
+            const doctors = {
+                id: doctor.id,
+                registrationNumber: doctor.registrationNumber,
+                name: doctor.name,
+                qualification: doctor.qualification,
+                expertise: doctor.expertise,
+                organization: doctor.organization,
+                address: doctor.address,
+                visitHour: doctor.visitHour,
+                phone: doctor.phone,
+                email: doctor.email,
+                imgUrl: doctorPicBuffer,
+            };
+            const result = await doctorCollections.insertOne(doctors);
+            res.json(result);
+            // console.log('files', req.files);
+            // res.json({ success: true });
         });
     } finally {
         // await client.close();
