@@ -48,12 +48,12 @@ async function run() {
         const ordersCollection = database.collection('orders');
         const blogCollection = database.collection('blogs');
         const paymentCollection = database.collection('payment');
-        const allProductsCollection = database.collection('allProducts')
+        const productsCollection = database.collection('products')
         const doctorCollections = database.collection('doctors');
         const adoptationCollections = database.collection('adoptation');
         //sslcommerz init
         app.post('/init', async (req, res) => {
-            // console.log(req.body);
+
             const data = {
                 total_amount: req.body.total_amount,
                 currency: 'BDT',
@@ -70,6 +70,7 @@ async function run() {
                 cus_name: req.body.cus_name,
                 cus_email: req.body.cus_email,
                 purchase_date: req.body.date,
+                uniqueID: req.body.uniqueID,
                 cus_add1: 'Dhaka',
                 cus_add2: 'Dhaka',
                 cus_city: 'Dhaka',
@@ -139,7 +140,7 @@ async function run() {
             res.send(paymnets)
         });
         app.get('/products', async (req, res) => {
-            const cursor = allProductsCollection.find({});
+            const cursor = productsCollection.find({});
             const products = await cursor.toArray();
             res.send(products);
         });
@@ -170,28 +171,24 @@ async function run() {
             const curosor = blogCollection.find({});
             const allAppointments = await curosor.toArray();
             res.json(allAppointments);
+        });
+        app.get('/adoptions', async (req, res) => {
+            const curosor = adoptationCollections.find({});
+            const allAppointments = await curosor.toArray();
+            res.json(allAppointments);
         })
         app.post('/appointments', async (req, res) => {
             const appointment = req.body;
-            // console.log(appointment);
             const result = await appointmentsCollection.insertOne(appointment);
-            // console.log(result);
             res.json(result)
         });
         app.post('/adoptations', async (req, res) => {
             const adoptaion = req.body;
-            console.log(adoptaion);
             const result = await adoptationCollections.insertOne(adoptaion);
             res.json(result);
         })
-        app.post('/allProducts', async (req, res) => {
-            // console.log('body', req.body);
-            // console.log('files', req.files);
+        app.post('/products', async (req, res) => {
             const product = req.body;
-            const pic = req.files.img;
-            const picData = pic.data;
-            const encodedPic = picData.toString('base64');
-            const productPicBuffer = Buffer.from(encodedPic, 'base64');
             const products = {
                 key: product.key,
                 category: product.category,
@@ -202,10 +199,10 @@ async function run() {
                 description: product.description,
                 price: product.price,
                 shipping: product.shipping,
-                img: productPicBuffer
+                img: product.img
             }
 
-            const result = await allProductsCollection.insertOne(products);
+            const result = await productsCollection.insertOne(products);
             res.json(result);
         })
         app.post('/blogs', async (req, res) => {
@@ -345,6 +342,7 @@ async function run() {
                 qualification: doctor.qualification,
                 expertise: doctor.expertise,
                 organization: doctor.organization,
+                designation: doctor.designation,
                 address: doctor.address,
                 visitHour: doctor.visitHour,
                 phone: doctor.phone,
