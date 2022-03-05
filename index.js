@@ -118,6 +118,8 @@ async function run() {
                 {
                     $set: {
                         val_id: req.body.val_id,
+                        payment_status: "Paid",
+
                     },
                 }
             );
@@ -163,13 +165,21 @@ async function run() {
             const orders = await result.toArray();
             res.json(orders);
         });
+        app.get('/orderDetails', async (req, res) => {
+            const cursor = ordersCollection.find({});
+            const orders = await cursor.toArray();
+            res.json(orders);
+        })
         app.get("/appointments", async (req, res) => {
             const email = req.query.email;
-            console.log(req.query.date);
-            const date = new Date(req.query.date).toDateString();
+            // const date = new Date(req.query.date).toDateString();
+            // console.log(date);
+            const date = req.query.date;
             const query = { email: email, date: date };
             const cursor = appointmentsCollection.find(query);
+
             const appointments = await cursor.toArray();
+            console.log(appointments);
             res.json(appointments);
         });
 
@@ -190,8 +200,9 @@ async function run() {
         })
         app.post('/appointments', async (req, res) => {
             const appointment = req.body;
+            console.log(appointment);
             const result = await appointmentsCollection.insertOne(appointment);
-            res.json(result)
+            res.json(result);
         });
         app.post("/adoptations", async (req, res) => {
             const adoptaion = req.body;
